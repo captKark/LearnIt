@@ -97,7 +97,7 @@ const Home: React.FC = () => {
             >
               <div className="relative z-10 w-full h-full">
                 <img
-                  src="https://images.pexels.com/photos/6347974/pexels-photo-6347974.jpeg?_gl=1*ojfwik*_ga*MTkxMTc2NTg0LjE3NTkxNTMyOTY.*_ga_8JE65Q40S6*czE3NTkzMTQ4NjYkbzIkZzEkdDE3NTkzMTY3MDQkajkkbDAkaDA."
+                  src="https://images.pexels.com/photos/8500310/pexels-photo-8500310.jpeg"
                   alt="A satisfied Bangladeshi student learning online with a laptop"
                   className="rounded-2xl shadow-2xl w-full h-full object-cover"
                 />
