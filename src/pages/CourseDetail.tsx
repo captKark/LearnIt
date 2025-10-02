@@ -1,25 +1,27 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Clock, Users, Star, BookOpen, Award, Shield, ArrowLeft, ShoppingCart } from 'lucide-react';
+import { Clock, Users, Star, ArrowLeft, ShoppingCart, Heart } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { getCourseById } from '../services/api';
+import { getCourseById, addToWishlist, removeFromWishlist, getWishlist } from '../services/api';
 import { useCart } from '../contexts/CartContext';
 import { useAuth } from '../contexts/AuthContext';
 import { Course } from '../types';
 import LoadingSpinner from '../components/UI/LoadingSpinner';
+import CourseTabs from '../components/UI/CourseTabs';
 
 const CourseDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { addToCart, items } = useCart();
+  const { addToCart, items: cartItems } = useCart();
   const { user } = useAuth();
   
   const [course, setCourse] = useState<Course | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isInWishlist, setIsInWishlist] = useState(false);
 
   useEffect(() => {
-    const fetchCourse = async () => {
+    const fetchCourseAndWishlist = async () => {
       if (!id) {
         setError("Course ID is missing.");
         setIsLoading(false);
@@ -33,6 +35,10 @@ const CourseDetail: React.FC = () => {
         } else {
           setError("Course not found.");
         }
+        if (user) {
+          const wishlist = await getWishlist();
+          setIsInWishlist(wishlist.some(item => item.course_id === id));
+        }
       } catch (err) {
         setError("Failed to fetch course details.");
         console.error(err);
@@ -40,8 +46,26 @@ const CourseDetail: React.FC = () => {
         setIsLoading(false);
       }
     };
-    fetchCourse();
-  }, [id]);
+    fetchCourseAndWishlist();
+  }, [id, user]);
+
+  const handleWishlistToggle = async () => {
+    if (!user || !id) {
+      navigate('/login');
+      return;
+    }
+    try {
+      if (isInWishlist) {
+        await removeFromWishlist(id);
+        setIsInWishlist(false);
+      } else {
+        await addToWishlist(id);
+        setIsInWishlist(true);
+      }
+    } catch (error) {
+      console.error("Failed to update wishlist", error);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -64,11 +88,11 @@ const CourseDetail: React.FC = () => {
     );
   }
 
-  const isInCart = items.some(item => item.course.id === course.id);
+  const isInCart = cartItems.some(item => item.course.id === course.id);
 
   const handleAddToCart = () => {
     if (!user) {
-      navigate('/login');
+      navigate('/login', { state: { from: location } });
       return;
     }
     addToCart(course);
@@ -76,7 +100,7 @@ const CourseDetail: React.FC = () => {
 
   const handleBuyNow = () => {
     if (!user) {
-      navigate('/login');
+      navigate('/login', { state: { from: location } });
       return;
     }
     if (!isInCart) {
@@ -85,79 +109,66 @@ const CourseDetail: React.FC = () => {
     navigate('/cart');
   };
 
+  const videoId = course.preview_video_url?.split('v=')[1];
+
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <button onClick={() => navigate('/courses')} className="flex items-center text-gray-600 hover:text-blue-600 mb-4">
+      <div className="bg-gray-800 text-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          <button onClick={() => navigate(-1)} className="flex items-center text-gray-300 hover:text-white mb-6">
             <ArrowLeft className="w-5 h-5 mr-2" />
-            Back to Courses
+            Back
           </button>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-2">
+              <h1 className="text-3xl md:text-4xl font-extrabold mb-3">{course.title}</h1>
+              <p className="text-lg text-gray-300 mb-4">{course.description}</p>
+              <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-gray-300">
+                <div className="flex items-center space-x-1"><Star className="w-4 h-4 text-yellow-400 fill-current" /><span className="font-medium">{course.rating}</span></div>
+                <div className="flex items-center space-x-1"><Users className="w-4 h-4" /><span>{course.students.toLocaleString()} students</span></div>
+                <div className="flex items-center space-x-1"><Clock className="w-4 h-4" /><span>Last updated {new Date(course.created_at).toLocaleDateString()}</span></div>
+              </div>
+              <p className="text-sm text-gray-300 mt-2">Created by {course.instructor}</p>
+            </div>
+          </div>
         </div>
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2">
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-              <img src={course.thumbnail} alt={course.title} className="w-full h-64 md:h-80 object-cover" />
-              <div className="p-8">
-                <div className="flex items-center justify-between mb-4">
-                  <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">{course.category}</span>
-                  <span className="px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-sm font-medium">{course.level}</span>
-                </div>
-                <h1 className="text-3xl md:text-4xl font-extrabold text-gray-900 mb-4">{course.title}</h1>
-                <div className="flex flex-wrap items-center gap-6 mb-6 text-sm text-gray-600">
-                  <div className="flex items-center space-x-1"><Star className="w-4 h-4 text-yellow-400 fill-current" /><span className="font-medium">{course.rating}</span></div>
-                  <div className="flex items-center space-x-1"><Users className="w-4 h-4" /><span>{course.students.toLocaleString()} students</span></div>
-                  <div className="flex items-center space-x-1"><Clock className="w-4 h-4" /><span>{course.duration}</span></div>
-                  <div className="flex items-center space-x-1"><BookOpen className="w-4 h-4" /><span>{course.lessons} lessons</span></div>
-                </div>
-                <p className="text-gray-700 leading-relaxed mb-8">{course.description}</p>
-                <div className="mb-8">
-                  <h3 className="text-xl font-semibold text-gray-900 mb-4">What you'll learn</h3>
-                  <ul className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {course.features.map((feature, index) => (
-                      <li key={index} className="flex items-start space-x-3">
-                        <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5"><div className="w-2 h-2 bg-green-600 rounded-full"></div></div>
-                        <span className="text-gray-700">{feature}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-                <div className="border-t border-gray-200 pt-8">
-                  <h3 className="text-xl font-semibold text-gray-900 mb-4">About the instructor</h3>
-                  <div className="flex items-start space-x-4">
-                    <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold text-xl">{course.instructor.charAt(0)}</div>
-                    <div>
-                      <h4 className="font-semibold text-gray-900 mb-1">{course.instructor}</h4>
-                      <p className="text-gray-600">Expert Instructor</p>
-                      <p className="text-sm text-gray-500 mt-2">Professional instructor with years of industry experience and thousands of satisfied students.</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </motion.div>
+            <CourseTabs course={course} />
           </div>
           <div className="lg:col-span-1">
-            <motion.div initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 }} className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 sticky top-8">
-              <div className="text-center mb-6"><div className="text-4xl font-bold text-gray-900 mb-2">${course.price}</div><div className="text-sm text-gray-500">One-time payment</div></div>
-              <div className="space-y-3 mb-6">
-                {isInCart ? (
-                  <button onClick={() => navigate('/cart')} className="w-full py-3 px-4 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors">View in Cart</button>
-                ) : (
-                  <button onClick={handleAddToCart} className="w-full py-3 px-4 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center justify-center space-x-2"><ShoppingCart className="w-5 h-5" /><span>Add to Cart</span></button>
-                )}
+            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="bg-white rounded-xl shadow-lg border border-gray-100 sticky top-24">
+              {videoId ? (
+                <div className="aspect-video">
+                  <iframe
+                    className="w-full h-full rounded-t-xl"
+                    src={`https://www.youtube.com/embed/${videoId}`}
+                    title="YouTube video player"
+                    frameBorder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  ></iframe>
+                </div>
+              ) : (
+                <img src={course.thumbnail} alt={course.title} className="w-full h-48 object-cover rounded-t-xl" />
+              )}
+              <div className="p-6">
+                <div className="text-center mb-6"><div className="text-4xl font-bold text-gray-900 mb-2">৳{course.price}</div></div>
+                <div className="flex items-center gap-3 mb-4">
+                  {isInCart ? (
+                    <button onClick={() => navigate('/cart')} className="w-full py-3 px-4 bg-green-600 text-white rounded-lg font-medium hover:bg-green-700 transition-colors">View in Cart</button>
+                  ) : (
+                    <button onClick={handleAddToCart} className="w-full py-3 px-4 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors flex items-center justify-center space-x-2"><ShoppingCart className="w-5 h-5" /><span>Add to Cart</span></button>
+                  )}
+                  <button onClick={handleWishlistToggle} className="p-3 border-2 border-gray-200 rounded-lg text-gray-600 hover:border-red-500 hover:text-red-500 transition-colors">
+                    <Heart className={`w-6 h-6 ${isInWishlist ? 'fill-current text-red-500' : ''}`} />
+                  </button>
+                </div>
                 <button onClick={handleBuyNow} className="w-full py-3 px-4 border-2 border-blue-600 text-blue-600 rounded-lg font-medium hover:bg-blue-50 transition-colors">Buy Now</button>
-              </div>
-              <div className="border-t border-gray-200 pt-6">
-                <h4 className="font-semibold text-gray-900 mb-4">This course includes:</h4>
-                <ul className="space-y-3 text-sm">
-                  <li className="flex items-center space-x-3"><Clock className="w-4 h-4 text-gray-400" /><span>{course.duration} on-demand video</span></li>
-                  <li className="flex items-center space-x-3"><BookOpen className="w-4 h-4 text-gray-400" /><span>{course.lessons} lessons</span></li>
-                  <li className="flex items-center space-x-3"><Award className="w-4 h-4 text-gray-400" /><span>Certificate of completion</span></li>
-                  <li className="flex items-center space-x-3"><Shield className="w-4 h-4 text-gray-400" /><span>30-day money-back guarantee</span></li>
-                </ul>
+                <p className="text-xs text-center text-gray-500 mt-4">30-Day Money-Back Guarantee</p>
               </div>
             </motion.div>
           </div>

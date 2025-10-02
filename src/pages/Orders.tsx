@@ -75,8 +75,8 @@ const Orders: React.FC = () => {
             <motion.div key={order.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.1 }} className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4">
                 <div>
-                  <h3 className="text-lg font-semibold text-gray-900">Order #{order.id}</h3>
-                  <div className="flex items-center text-sm text-gray-500 mt-1"><Calendar className="w-4 h-4 mr-1" />{formatDate(order.createdAt)}</div>
+                  <h3 className="text-lg font-semibold text-gray-900">Order #{order.id.substring(0, 8)}</h3>
+                  <div className="flex items-center text-sm text-gray-500 mt-1"><Calendar className="w-4 h-4 mr-1" />{formatDate(order.created_at)}</div>
                 </div>
                 <div className="mt-2 sm:mt-0">
                   <span className={`px-3 py-1 rounded-full text-xs font-medium ${order.status === 'paid' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'}`}>
@@ -93,7 +93,7 @@ const Orders: React.FC = () => {
                       <p className="text-sm text-gray-500">by {course.instructor}</p>
                     </div>
                     <div className="text-right">
-                      <p className="font-medium text-gray-900">${course.price}</p>
+                      <p className="font-medium text-gray-900">৳{course.price}</p>
                       {order.status === 'paid' && (<button className="text-xs text-blue-600 hover:text-blue-700 flex items-center mt-1"><Download className="w-3 h-3 mr-1" />Access Course</button>)}
                     </div>
                   </div>
@@ -101,7 +101,7 @@ const Orders: React.FC = () => {
               </div>
               <div className="flex justify-between items-center pt-4 border-t border-gray-200">
                 <span className="text-gray-600">Total</span>
-                <span className="text-xl font-bold text-gray-900">${order.total.toFixed(2)}</span>
+                <span className="text-xl font-bold text-gray-900">৳{order.total.toFixed(2)}</span>
               </div>
             </motion.div>
           ))}

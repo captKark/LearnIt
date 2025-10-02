@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { Search, SlidersHorizontal } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import CourseCard from '../components/UI/CourseCard';
@@ -7,12 +8,14 @@ import { getCourses } from '../services/api';
 import { Course } from '../types';
 
 const Courses: React.FC = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
+  
   const [allCourses, setAllCourses] = useState<Course[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
-  const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState('All');
+  const [searchTerm, setSearchTerm] = useState(searchParams.get('search') || '');
+  const [selectedCategory, setSelectedCategory] = useState(searchParams.get('category') || 'All');
   const [selectedLevel, setSelectedLevel] = useState('All');
   const [sortBy, setSortBy] = useState('popular');
   const [showFilters, setShowFilters] = useState(false);
@@ -21,7 +24,7 @@ const Courses: React.FC = () => {
     const fetchCourses = async () => {
       try {
         setIsLoading(true);
-        const coursesData = await getCourses();
+        const coursesData = await getCourses(searchTerm);
         setAllCourses(coursesData);
         setError(null);
       } catch (err) {
@@ -32,19 +35,17 @@ const Courses: React.FC = () => {
       }
     };
     fetchCourses();
-  }, []);
+  }, [searchTerm]);
 
   const categories = useMemo(() => ['All', ...Array.from(new Set(allCourses.map(course => course.category)))], [allCourses]);
   const levels = ['All', 'Beginner', 'Intermediate', 'Advanced'];
 
   const filteredAndSortedCourses = useMemo(() => {
     let filtered = allCourses.filter(course => {
-      const matchesSearch = course.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           course.description.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesCategory = selectedCategory === 'All' || course.category === selectedCategory;
       const matchesLevel = selectedLevel === 'All' || course.level === selectedLevel;
       
-      return matchesSearch && matchesCategory && matchesLevel;
+      return matchesCategory && matchesLevel;
     });
 
     switch (sortBy) {
@@ -64,7 +65,12 @@ const Courses: React.FC = () => {
     }
 
     return filtered;
-  }, [searchTerm, selectedCategory, selectedLevel, sortBy, allCourses]);
+  }, [selectedCategory, selectedLevel, sortBy, allCourses]);
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault();
+    setSearchParams(searchTerm ? { search: searchTerm } : {});
+  };
 
   return (
     <div className="min-h-screen bg-gray-50 py-8">
@@ -79,7 +85,7 @@ const Courses: React.FC = () => {
         </div>
 
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-8">
-          <div className="flex flex-col lg:flex-row gap-4">
+          <form onSubmit={handleSearch} className="flex flex-col lg:flex-row gap-4">
             <div className="flex-1 relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
               <input
@@ -91,8 +97,9 @@ const Courses: React.FC = () => {
               />
             </div>
             <button
+              type="button"
               onClick={() => setShowFilters(!showFilters)}
-              className="lg:hidden flex items-center px-4 py-3 border border-gray-200 rounded-lg hover:bg-gray-50"
+              className="lg:hidden flex items-center justify-center px-4 py-3 border border-gray-200 rounded-lg hover:bg-gray-50"
             >
               <SlidersHorizontal className="w-5 h-5 mr-2" />
               Filters
@@ -107,7 +114,7 @@ const Courses: React.FC = () => {
               <option value="price-low">Price: Low to High</option>
               <option value="price-high">Price: High to Low</option>
             </select>
-          </div>
+          </form>
           <AnimatePresence>
             {(showFilters || (typeof window !== 'undefined' && window.innerWidth >= 1024)) && (
               <motion.div

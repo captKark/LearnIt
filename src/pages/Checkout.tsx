@@ -80,7 +80,7 @@ const Checkout: React.FC = () => {
               <div className="border-t border-gray-200 pt-6 mt-6">
                 <div className="flex items-center text-sm text-gray-500 mb-4"><Lock className="w-4 h-4 mr-2" />Your payment information is secure and encrypted</div>
                 <button type="submit" disabled={isProcessing} className="w-full py-3 px-4 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center">
-                  {isProcessing ? (<><LoadingSpinner size="sm" className="mr-2" />Processing Payment...</>) : (`Complete Payment - $${total.toFixed(2)}`)}
+                  {isProcessing ? (<><LoadingSpinner size="sm" className="mr-2" />Processing Payment...</>) : (`Complete Payment - ৳${total.toFixed(2)}`)}
                 </button>
               </div>
             </form>
@@ -92,14 +92,14 @@ const Checkout: React.FC = () => {
                 <div key={item.course.id} className="flex items-start gap-3">
                   <img src={item.course.thumbnail} alt={item.course.title} className="w-16 h-12 object-cover rounded-lg" />
                   <div className="flex-1"><h3 className="font-medium text-gray-900 text-sm">{item.course.title}</h3><p className="text-sm text-gray-500">by {item.course.instructor}</p></div>
-                  <span className="font-medium text-gray-900">${item.course.price}</span>
+                  <span className="font-medium text-gray-900">৳{item.course.price}</span>
                 </div>
               ))}
             </div>
             <div className="border-t border-gray-200 pt-4 space-y-2">
-              <div className="flex justify-between"><span className="text-gray-600">Subtotal</span><span className="font-medium">${total.toFixed(2)}</span></div>
-              <div className="flex justify-between"><span className="text-gray-600">Tax</span><span className="font-medium">$0.00</span></div>
-              <div className="flex justify-between text-lg font-semibold border-t border-gray-200 pt-2"><span>Total</span><span>${total.toFixed(2)}</span></div>
+              <div className="flex justify-between"><span className="text-gray-600">Subtotal</span><span className="font-medium">৳{total.toFixed(2)}</span></div>
+              <div className="flex justify-between"><span className="text-gray-600">Tax</span><span className="font-medium">৳0.00</span></div>
+              <div className="flex justify-between text-lg font-semibold border-t border-gray-200 pt-2"><span>Total</span><span>৳{total.toFixed(2)}</span></div>
             </div>
             <div className="mt-6 p-4 bg-green-50 border border-green-200 rounded-lg">
               <p className="text-sm text-green-800">✅ 30-day money-back guarantee</p>

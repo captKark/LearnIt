@@ -64,7 +64,7 @@ const CourseCard: React.FC<CourseCardProps> = ({ course, index = 0 }) => {
         
         <div className="flex items-center justify-between">
           <span className="text-2xl font-bold text-gray-900">
-            ${course.price}
+            ৳{course.price}
           </span>
           <Link
             to={`/course/${course.id}`}

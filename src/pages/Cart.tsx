@@ -82,12 +82,9 @@ const Cart: React.FC = () => {
                       <p className="text-sm text-gray-600 mb-2">
                         by {item.course.instructor}
                       </p>
-                      <p className="text-sm text-gray-500 mb-3 line-clamp-2">
-                        {item.course.description}
-                      </p>
                       <div className="flex items-center justify-between">
                         <span className="text-xl font-bold text-gray-900">
-                          ${item.course.price}
+                          ৳{item.course.price}
                         </span>
                         <button
                           onClick={() => removeFromCart(item.course.id)}
@@ -110,23 +107,23 @@ const Cart: React.FC = () => {
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.2 }}
-              className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 sticky top-8"
+              className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 sticky top-24"
             >
               <h3 className="text-lg font-semibold text-gray-900 mb-4">Order Summary</h3>
               
               <div className="space-y-3 mb-6">
                 <div className="flex justify-between">
                   <span className="text-gray-600">Subtotal</span>
-                  <span className="font-medium">${total.toFixed(2)}</span>
+                  <span className="font-medium">৳{total.toFixed(2)}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-gray-600">Tax</span>
-                  <span className="font-medium">$0.00</span>
+                  <span className="font-medium">৳0.00</span>
                 </div>
                 <div className="border-t border-gray-200 pt-3">
                   <div className="flex justify-between">
                     <span className="text-lg font-semibold">Total</span>
-                    <span className="text-lg font-bold text-gray-900">${total.toFixed(2)}</span>
+                    <span className="text-lg font-bold text-gray-900">৳{total.toFixed(2)}</span>
                   </div>
                 </div>
               </div>

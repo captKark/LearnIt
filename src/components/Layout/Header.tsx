@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Menu, X, ShoppingCart, User, LogOut, BookOpen, Settings } from 'lucide-react';
+import { Menu, X, ShoppingCart, User, LogOut, BookOpen, Settings, Heart, Bell } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { useCart } from '../../contexts/CartContext';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -8,6 +8,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 const Header: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
+  const [isNotificationMenuOpen, setIsNotificationMenuOpen] = useState(false);
   const { user, logout } = useAuth();
   const { itemCount } = useCart();
   const navigate = useNavigate();
@@ -51,6 +52,44 @@ const Header: React.FC = () => {
 
           {/* Right side - Cart, User */}
           <div className="flex items-center space-x-4">
+            {user && (
+              <>
+                {/* Wishlist */}
+                <Link to="/wishlist" className="relative p-2 text-gray-600 hover:text-blue-600 transition-colors">
+                  <Heart className="w-6 h-6" />
+                </Link>
+                {/* Notifications */}
+                <div className="relative">
+                  <button
+                    onClick={() => setIsNotificationMenuOpen(!isNotificationMenuOpen)}
+                    className="relative p-2 text-gray-600 hover:text-blue-600 transition-colors"
+                  >
+                    <Bell className="w-6 h-6" />
+                    <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 flex items-center justify-center">1</span>
+                  </button>
+                  <AnimatePresence>
+                    {isNotificationMenuOpen && (
+                      <motion.div
+                        initial={{ opacity: 0, y: -10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -10 }}
+                        className="absolute right-0 mt-2 w-80 bg-white rounded-md shadow-lg border border-gray-200"
+                      >
+                        <div className="p-3 font-bold border-b">Notifications</div>
+                        <div className="p-4 text-sm text-gray-700 hover:bg-gray-50">
+                          <p className="font-semibold">New Course Alert!</p>
+                          <p>Check out our new course on Advanced React patterns.</p>
+                        </div>
+                        <div className="p-2 text-center border-t">
+                          <Link to="#" className="text-blue-600 text-sm">View all</Link>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </>
+            )}
+
             {/* Cart */}
             <Link to="/cart" className="relative p-2 text-gray-600 hover:text-blue-600 transition-colors">
               <ShoppingCart className="w-6 h-6" />
@@ -85,11 +124,18 @@ const Header: React.FC = () => {
                       className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 border border-gray-200"
                     >
                       <Link
+                        to="/"
+                        className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                        onClick={() => setIsUserMenuOpen(false)}
+                      >
+                        Dashboard
+                      </Link>
+                      <Link
                         to="/orders"
                         className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                         onClick={() => setIsUserMenuOpen(false)}
                       >
-                        My Orders
+                        My Courses
                       </Link>
                       {user.is_admin && (
                         <Link
@@ -99,7 +145,7 @@ const Header: React.FC = () => {
                         >
                           <div className="flex items-center space-x-2">
                             <Settings className="w-4 h-4" />
-                            <span>Admin Dashboard</span>
+                            <span>Admin</span>
                           </div>
                         </Link>
                       )}

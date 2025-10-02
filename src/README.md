@@ -4,14 +4,14 @@ A beautiful, responsive EdTech eCommerce platform built with React, TypeScript, 
 
 ## 🚀 Features
 
-- **Real Backend**: Fully integrated with Supabase for database and authentication.
-- **Course Marketplace**: Browse and discover courses with advanced filtering.
-- **Secure User Authentication**: Register, login, and logout functionality powered by Supabase Auth.
-- **Shopping Cart**: Add/remove courses with persistent cart state in local storage.
+- **Personalized Dashboard**: A unique homepage experience for logged-in users.
+- **Full-Text Search**: Upgraded with Supabase's full-text search for fast, relevant results.
+- **Course Previews**: Video previews on course detail pages.
+- **Reviews & Ratings**: Users can view and add reviews for courses.
+- **Wishlist Functionality**: Users can save courses to a personal wishlist.
+- **Admin Dashboard**: Full CRUD functionality for admins to manage courses.
+- **Secure User Authentication**: Powered by Supabase Auth.
 - **Real Orders**: Checkout flow creates real orders in the Supabase database.
-- **User Dashboard**: View your order history fetched from the database.
-- **Admin Role**: Support for an admin role to manage content (UI for admin dashboard is a next step).
-- **Responsive Design**: Fully responsive across mobile, tablet, and desktop.
 
 ## 🛠 Tech Stack
 
@@ -34,139 +34,200 @@ This project requires a Supabase backend. Follow these steps to get it running.
 
 ### 2. Set Up Environment Variables
 
-- In the root of this project, create a new file named `.env`.
-- Copy the content below into your `.env` file:
-  ```
-  VITE_SUPABASE_URL=YOUR_SUPABASE_URL
-  VITE_SUPABASE_ANON_KEY=YOUR_SUPABASE_ANON_KEY
-  ```
+- In the root of this project, find the file named `.env`.
 - In your Supabase project, go to **Settings > API**.
 - Copy the **Project URL** and the **anon public key** and paste them into your `.env` file.
 
 ### 3. Set Up Database Schema
 
-- Go to the **SQL Editor** in your Supabase dashboard.
-- Click **+ New query**.
-- Copy the entire content of the SQL script below and paste it into the SQL Editor.
-- Click **Run** to create your database tables and seed them with data.
+This is the most important step. Run the script below in your Supabase SQL Editor to create all necessary tables, functions, and enable full-text search.
+
+---
+
+### A) Full Reset Script (For First-Time Setup or Full Reset)
+
+Use this script if your database is empty or you want to start completely fresh. **Warning: This will delete all existing data.**
 
 ```sql
--- 1. COURSES TABLE
--- This table stores all the course information.
-create table courses (
-  id uuid primary key default gen_random_uuid(),
-  created_at timestamptz not null default now(),
-  title text not null,
+-- === FULL RESET SCRIPT ===
+
+-- Drop trigger first to remove dependency
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+
+-- Drop existing tables and functions if they exist to ensure a clean slate
+DROP TABLE IF EXISTS public.wishlist;
+DROP TABLE IF EXISTS public.reviews;
+DROP TABLE IF EXISTS public.orders;
+DROP TABLE IF EXISTS public.courses;
+DROP TABLE IF EXISTS public.profiles;
+DROP FUNCTION IF EXISTS public.handle_new_user();
+DROP FUNCTION IF EXISTS public.is_admin();
+
+-- 1. PROFILES TABLE
+CREATE TABLE public.profiles (
+  id uuid PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  full_name text,
+  is_admin boolean DEFAULT false
+);
+COMMENT ON TABLE public.profiles IS 'Stores public user profile information.';
+
+-- 2. COURSES TABLE
+CREATE TABLE public.courses (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  created_at timestamptz NOT NULL DEFAULT now(),
+  title text NOT NULL,
   description text,
-  price numeric(10, 2) not null,
+  price numeric(10, 2) NOT NULL,
   thumbnail text,
   instructor text,
   duration text,
   lessons integer,
-  level text check (level in ('Beginner', 'Intermediate', 'Advanced')),
+  level text CHECK (level IN ('Beginner', 'Intermediate', 'Advanced')),
   category text,
-  rating numeric(2, 1),
-  students integer,
-  features text[]
+  rating numeric(2, 1) DEFAULT 4.5,
+  students integer DEFAULT 0,
+  features text[],
+  preview_video_url text,
+  -- For full-text search
+  fts tsvector GENERATED ALWAYS AS (to_tsvector('english', title || ' ' || description || ' ' || category)) STORED
 );
-
--- 2. PROFILES TABLE
--- This table stores user profile data and is linked to the auth.users table.
-create table profiles (
-  id uuid primary key references auth.users(id) on delete cascade,
-  full_name text,
-  is_admin boolean default false
-);
+COMMENT ON TABLE public.courses IS 'Stores all course information.';
+-- Create an index for full-text search
+CREATE INDEX courses_fts ON public.courses USING gin (fts);
 
 -- 3. ORDERS TABLE
--- This table stores order information.
-create table orders (
-  id uuid primary key default gen_random_uuid(),
-  created_at timestamptz not null default now(),
-  user_id uuid references auth.users(id) on delete cascade,
-  total numeric(10, 2) not null,
-  status text check (status in ('pending', 'paid', 'cancelled')),
+CREATE TABLE public.orders (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  created_at timestamptz NOT NULL DEFAULT now(),
+  user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE,
+  total numeric(10, 2) NOT NULL,
+  status text CHECK (status IN ('pending', 'paid', 'cancelled')),
   course_ids uuid[]
 );
+COMMENT ON TABLE public.orders IS 'Stores user order information.';
 
--- 4. FUNCTION TO CREATE A USER PROFILE ON SIGNUP
--- This function is triggered automatically when a new user signs up.
-create function public.handle_new_user()
-returns trigger
-language plpgsql
-security definer set search_path = public
-as $$
-begin
-  insert into public.profiles (id, full_name)
-  values (new.id, new.raw_user_meta_data->>'full_name');
-  return new;
-end;
+-- 4. REVIEWS TABLE
+CREATE TABLE public.reviews (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  created_at timestamptz NOT NULL DEFAULT now(),
+  course_id uuid NOT NULL REFERENCES public.courses(id) ON DELETE CASCADE,
+  user_id uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  rating integer NOT NULL CHECK (rating >= 1 AND rating <= 5),
+  comment text,
+  UNIQUE(course_id, user_id) -- A user can only review a course once
+);
+COMMENT ON TABLE public.reviews IS 'Stores user reviews and ratings for courses.';
+
+-- 5. WISHLIST TABLE
+CREATE TABLE public.wishlist (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  course_id uuid NOT NULL REFERENCES public.courses(id) ON DELETE CASCADE,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  UNIQUE(user_id, course_id)
+);
+COMMENT ON TABLE public.wishlist IS 'Stores user wishlist items.';
+
+-- 6. FUNCTION TO CREATE A USER PROFILE ON SIGNUP
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS trigger
+LANGUAGE plpgsql
+SECURITY DEFINER SET search_path = public
+AS $$
+BEGIN
+  INSERT INTO public.profiles (id, full_name, is_admin)
+  VALUES (new.id, new.raw_user_meta_data->>'full_name', COALESCE((new.raw_user_meta_data->>'is_admin')::boolean, false));
+  RETURN new;
+END;
 $$;
 
--- 5. TRIGGER to execute the function
-create trigger on_auth_user_created
-  after insert on auth.users
-  for each row execute procedure public.handle_new_user();
+-- 7. TRIGGER to execute the function
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();
 
--- 6. ENABLE ROW LEVEL SECURITY (RLS)
--- Important for security. This ensures users can only access their own data.
-alter table profiles enable row level security;
-alter table courses enable row level security;
-alter table orders enable row level security;
+-- 8. HELPER FUNCTION to check if user is admin
+CREATE OR REPLACE FUNCTION is_admin()
+RETURNS boolean
+LANGUAGE sql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  SELECT COALESCE((SELECT is_admin FROM public.profiles WHERE id = auth.uid()), false)
+$$;
 
--- 7. RLS POLICIES
--- Allow public read access to courses
-create policy "Allow public read access to courses" on courses for select using (true);
+-- 9. ENABLE ROW LEVEL SECURITY (RLS)
+ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.courses ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.orders ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.reviews ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.wishlist ENABLE ROW LEVEL SECURITY;
 
--- Allow users to view their own profile
-create policy "Allow users to view their own profile" on profiles for select using (auth.uid() = id);
+-- 10. RLS POLICIES
+-- Profiles
+CREATE POLICY "Allow public read access to profiles" ON public.profiles FOR SELECT USING (true);
+CREATE POLICY "Allow users to update their own profile" ON public.profiles FOR UPDATE USING (auth.uid() = id);
 
--- Allow users to update their own profile
-create policy "Allow users to update their own profile" on profiles for update using (auth.uid() = id);
+-- Courses
+CREATE POLICY "Allow public read access to courses" ON public.courses FOR SELECT USING (true);
+CREATE POLICY "Allow admin full access to courses" ON public.courses FOR ALL USING (is_admin()) WITH CHECK (is_admin());
 
--- Allow users to view their own orders
-create policy "Allow users to view their own orders" on orders for select using (auth.uid() = user_id);
+-- Orders
+CREATE POLICY "Allow users to view their own orders" ON public.orders FOR SELECT USING (auth.uid() = user_id);
+CREATE POLICY "Allow users to create their own orders" ON public.orders FOR INSERT WITH CHECK (auth.uid() = user_id);
 
--- Allow users to create orders
-create policy "Allow users to create orders" on orders for insert with check (auth.uid() = user_id);
+-- Reviews
+CREATE POLICY "Allow public read access to reviews" ON public.reviews FOR SELECT USING (true);
+CREATE POLICY "Allow users to manage their own reviews" ON public.reviews FOR ALL USING (auth.uid() = user_id);
 
--- 8. SEED DATA (Sample Courses)
--- Insert sample courses into the courses table.
-INSERT INTO public.courses (title, description, price, thumbnail, instructor, duration, lessons, level, category, rating, students, features)
-VALUES
-('Python for Beginners', 'Learn Python fundamentals and basic projects.', 49.99, 'https://images.unsplash.com/photo-1526379095098-d400fd0bf935?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80', 'John Smith', '10 hours', 30, 'Beginner', 'Programming & Development', 4.5, 5234, '{"Lifetime access", "Certificate of completion"}'),
-('Full-Stack Web Development', 'Frontend + backend fundamentals.', 199.99, 'https://images.unsplash.com/photo-1542831371-29b0f74f9713?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80', 'Jane Doe', '50 hours', 100, 'Intermediate', 'Programming & Development', 4.8, 12876, '{"Lifetime access", "Certificate of completion", "30-day money-back guarantee"}'),
-('React.js Basics', 'Build dynamic web apps with React.', 99.99, 'https://images.unsplash.com/photo-1633356122544-f134324a6cee?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80', 'Emily White', '15 hours', 45, 'Beginner', 'Web Development', 4.9, 18345, '{"Lifetime access", "Certificate of completion"}'),
-('Data Structures & Algorithms', 'Key CS concepts for coding interviews.', 149.99, 'https://images.unsplash.com/photo-1555949963-ff9fe0c870eb?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80', 'Chris Green', '35 hours', 70, 'Advanced', 'Data & AI', 4.7, 9876, '{"Lifetime access", "Certificate of completion"}'),
-('UI/UX Design Fundamentals', 'Designing user-friendly apps.', 109.99, 'https://images.unsplash.com/photo-1581291518857-4e27b48ff24e?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80', 'Sarah Brown', '22 hours', 55, 'Intermediate', 'Design & Creativity', 4.8, 11234, '{"Lifetime access", "Certificate of completion"}'),
-('Digital Marketing Fundamentals', 'Social media, SEO, and Ads.', 89.99, 'https://images.unsplash.com/photo-1557862921-37829c790f19?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80', 'Michael Black', '18 hours', 40, 'Beginner', 'Business & Management', 4.6, 8765, '{"Lifetime access", "Certificate of completion"}');
+-- Wishlist
+CREATE POLICY "Allow users to manage their own wishlist" ON public.wishlist FOR ALL USING (auth.uid() = user_id);
 
+
+-- 11. SEED DATA (Insert sample courses)
+INSERT INTO public.courses (title, description, price, thumbnail, instructor, duration, lessons, level, category, rating, students, features, preview_video_url) VALUES
+('Python for Beginners', 'Learn Python fundamentals and build basic projects.', 1499, 'https://images.pexels.com/photos/1181373/pexels-photo-1181373.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2', 'Asif Mahmud', '10 hours', 30, 'Beginner', 'Programming & Development', 4.5, 5234, '{"Lifetime access", "Certificate of completion"}', 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'),
+('Full-Stack Web Development', 'Master frontend and backend development with MERN stack.', 4999, 'https://images.pexels.com/photos/326503/pexels-photo-326503.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2', 'Nadia Islam', '50 hours', 100, 'Intermediate', 'Web Development', 4.8, 12876, '{"Lifetime access", "Certificate of completion", "30-day money-back guarantee"}', 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'),
+('React.js Complete Guide', 'Build dynamic and modern web applications with React from scratch.', 3499, 'https://images.pexels.com/photos/11035471/pexels-photo-11035471.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2', 'Fatima Akhter', '30 hours', 80, 'Intermediate', 'Web Development', 4.9, 18345, '{"Lifetime access", "Certificate of completion"}', 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'),
+('Frontend with Tailwind CSS', 'Design beautiful, modern UIs with a utility-first CSS framework.', 1999, 'https://images.pexels.com/photos/4050315/pexels-photo-4050315.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2', 'Jahid Hossain', '12 hours', 35, 'Beginner', 'Web Development', 4.8, 9543, '{"Lifetime access", "Certificate of completion"}', 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'),
+('Machine Learning Basics', 'Learn basic ML concepts and build your first predictive models.', 3999, 'https://images.pexels.com/photos/8386440/pexels-photo-8386440.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2', 'Farhan Ahmed', '25 hours', 60, 'Intermediate', 'Data & AI', 4.6, 8765, '{"Lifetime access", "Certificate of completion"}', 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'),
+('UI/UX Design Fundamentals', 'Learn to design user-friendly and beautiful applications.', 3499, 'https://images.pexels.com/photos/326502/pexels-photo-326502.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2', 'Anika Tasnim', '22 hours', 55, 'Intermediate', 'Design & Creativity', 4.8, 11234, '{"Lifetime access", "Certificate of completion"}', 'https://www.youtube.com/watch?v=dQw4w9WgXcQ');
 ```
 
-### 4. Local Development
+---
 
-1. **Install dependencies**
-   ```bash
-   yarn install
-   ```
+### 4. ⚠️ Creating Demo Users (CRITICAL STEP)
 
-2. **Start development server**
-   ```bash
-   yarn dev
-   ```
+The demo credentials shown on the login page **will not work until you create them**.
 
-3. **Open your browser**
-   - Navigate to `http://localhost:5173` (or the port Vite is using).
-   - You should now be able to sign up, log in, and see the courses from your Supabase database!
+1.  **Register the User Account**:
+    -   Go to the **Sign Up** page in the application.
+    -   Register a new user with the email `user@example.com` and password `user123`.
+    -   **Confirm the email** by clicking the link sent to your inbox.
 
-## 🚀 Deployment
+2.  **Register the Admin Account**:
+    -   Log out, then go back to the **Sign Up** page.
+    -   Register another new user with the email `admin@example.com` and password `admin123`.
+    -   **Confirm this email** as well.
 
-You can deploy this frontend application to any static hosting provider like Vercel or Netlify.
+3.  **Grant Admin Privileges**:
+    -   Go to your **Supabase Dashboard**.
+    -   Navigate to the **Table Editor** and open the `profiles` table.
+    -   Find the row for `admin@example.com`.
+    -   Click the `is_admin` cell, change it from `false` to `true`, and save.
 
-1. **Connect your GitHub repository** to Vercel/Netlify.
-2. **Configure build settings**:
-   - Build Command: `yarn build`
-   - Output Directory: `dist`
-3. **Add Environment Variables**:
-   - In your Vercel/Netlify project settings, add the `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` from your `.env` file.
-4. **Deploy**.
+Now your demo credentials will work perfectly, with the correct roles and redirection.
+
+### 5. Local Development
+
+1.  **Install dependencies**
+    ```bash
+    yarn install
+    ```
+
+2.  **Start development server**
+    ```bash
+    yarn dev
+    ```
+
+3.  **Open your browser** and navigate to the local URL provided.

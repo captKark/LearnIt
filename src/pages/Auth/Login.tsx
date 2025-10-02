@@ -10,7 +10,8 @@ const Login: React.FC = () => {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
-  const { login, isLoading } = useAuth();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { login } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -19,17 +20,34 @@ const Login: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setIsSubmitting(true);
 
     if (!email || !password) {
       setError('Please fill in all fields');
+      setIsSubmitting(false);
       return;
     }
 
-    const success = await login(email, password);
-    if (success) {
-      navigate(from, { replace: true });
-    } else {
-      setError('Invalid email or password');
+    try {
+      const { success, isAdmin } = await login(email, password);
+      if (success) {
+        if (isAdmin) {
+          navigate('/admin', { replace: true });
+        } else {
+          navigate(from !== '/' ? from : '/courses', { replace: true });
+        }
+      }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred.';
+      if (errorMessage.includes('Invalid login credentials')) {
+        setError('Invalid credentials. Please check your email and password.');
+      } else if (errorMessage.includes('Email not confirmed')) {
+        setError('Please confirm your email address before logging in.');
+      } else {
+        setError(errorMessage);
+      }
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -51,13 +69,13 @@ const Login: React.FC = () => {
         </div>
 
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8">
-          {/* Demo Credentials */}
           <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
             <p className="text-sm text-blue-800 font-medium mb-2">Demo Credentials:</p>
             <div className="text-xs text-blue-700 space-y-1">
-              <p><strong>User:</strong> john@example.com / password123</p>
-              <p><strong>Admin:</strong> admin@example.com / password123</p>
+              <p><strong>User:</strong> user@example.com / user123</p>
+              <p><strong>Admin:</strong> admin@example.com / admin123</p>
             </div>
+            <p className="text-xs text-blue-600 mt-2 italic">Note: You must register these accounts first via the Sign Up page.</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -112,10 +130,10 @@ const Login: React.FC = () => {
 
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={isSubmitting}
               className="w-full py-3 px-4 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
             >
-              {isLoading ? <LoadingSpinner size="sm" /> : 'Sign In'}
+              {isSubmitting ? <LoadingSpinner size="sm" /> : 'Sign In'}
             </button>
           </form>
 

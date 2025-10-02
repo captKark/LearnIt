@@ -13,33 +13,48 @@ const Register: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState('');
-  const { register, isLoading } = useAuth();
+  const [successMessage, setSuccessMessage] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const { register, isLoading: isAuthLoading } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setSuccessMessage('');
+    setIsSubmitting(true);
 
     if (!name || !email || !password || !confirmPassword) {
       setError('Please fill in all fields');
+      setIsSubmitting(false);
       return;
     }
-
     if (password !== confirmPassword) {
       setError('Passwords do not match');
+      setIsSubmitting(false);
       return;
     }
-
     if (password.length < 6) {
       setError('Password must be at least 6 characters long');
+      setIsSubmitting(false);
       return;
     }
 
-    const success = await register(name, email, password);
-    if (success) {
-      navigate('/');
-    } else {
-      setError('Registration failed. Please try again.');
+    try {
+      const { success, error: apiError, requiresConfirmation } = await register(name, email, password);
+      if (success) {
+        if (requiresConfirmation) {
+          setSuccessMessage("Registration successful! Please check your inbox to confirm your email address before logging in.");
+        } else {
+          navigate('/courses');
+        }
+      } else {
+        setError(apiError || 'An unknown registration error occurred.');
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An unexpected error occurred.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
@@ -65,6 +80,11 @@ const Register: React.FC = () => {
             {error && (
               <div className="p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
                 {error}
+              </div>
+            )}
+            {successMessage && (
+              <div className="p-3 bg-green-50 border border-green-200 rounded-lg text-green-800 text-sm">
+                {successMessage}
               </div>
             )}
 
@@ -156,10 +176,10 @@ const Register: React.FC = () => {
 
             <button
               type="submit"
-              disabled={isLoading}
+              disabled={isAuthLoading || isSubmitting}
               className="w-full py-3 px-4 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
             >
-              {isLoading ? <LoadingSpinner size="sm" /> : 'Create Account'}
+              {isSubmitting ? <LoadingSpinner size="sm" /> : 'Create Account'}
             </button>
           </form>
 
