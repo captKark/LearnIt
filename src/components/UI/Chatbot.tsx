@@ -46,7 +46,7 @@ const Chatbot: React.FC = () => {
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.9 }}
           onClick={() => setIsOpen(!isOpen)}
-          className="bg-blue-600 text-white rounded-full p-4 shadow-lg"
+          className="bg-gradient-to-r from-[#396afc] to-[#2948ff] text-white rounded-full p-4 shadow-lg"
         >
           {isOpen ? <X size={24} /> : <MessageSquare size={24} />}
         </motion.button>
@@ -61,8 +61,8 @@ const Chatbot: React.FC = () => {
             transition={{ duration: 0.2 }}
             className="fixed bottom-20 right-5 w-80 h-96 bg-white rounded-xl shadow-2xl border border-gray-200 flex flex-col z-50"
           >
-            <header className="p-4 bg-blue-600 text-white rounded-t-xl">
-              <h3 className="font-bold">LearnIt Assistant</h3>
+            <header className="p-4 bg-gradient-to-r from-[#396afc] to-[#2948ff] text-white rounded-t-xl">
+              <h3 className="font-bold">SkillHunter Assistant</h3>
             </header>
             <main className="flex-1 p-4 overflow-y-auto">
               <div className="space-y-4">
@@ -73,7 +73,7 @@ const Chatbot: React.FC = () => {
                     animate={{ opacity: 1, y: 0 }}
                     className={`flex ${msg.sender === 'bot' ? 'justify-start' : 'justify-end'}`}
                   >
-                    <div className={`max-w-[80%] p-3 rounded-lg ${msg.sender === 'bot' ? 'bg-gray-100 text-gray-800' : 'bg-blue-500 text-white'}`}>
+                    <div className={`max-w-[80%] p-3 rounded-lg ${msg.sender === 'bot' ? 'bg-gray-100 text-gray-800' : 'bg-blue-600 text-white'}`}>
                       {msg.text}
                     </div>
                   </motion.div>

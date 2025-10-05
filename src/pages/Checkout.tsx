@@ -79,7 +79,7 @@ const Checkout: React.FC = () => {
               </div>
               <div className="border-t border-gray-200 pt-6 mt-6">
                 <div className="flex items-center text-sm text-gray-500 mb-4"><Lock className="w-4 h-4 mr-2" />Your payment information is secure and encrypted</div>
-                <button type="submit" disabled={isProcessing} className="w-full py-3 px-4 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center">
+                <button type="submit" disabled={isProcessing} className="w-full py-3 px-4 bg-gradient-to-r from-[#396afc] to-[#2948ff] text-white rounded-lg font-medium hover:shadow-lg transition-shadow disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center">
                   {isProcessing ? (<><LoadingSpinner size="sm" className="mr-2" />Processing Payment...</>) : (`Complete Payment - ৳${total.toFixed(2)}`)}
                 </button>
               </div>

@@ -1,24 +1,22 @@
-# LearnIt - Modern EdTech eCommerce Platform with Supabase
+# SkillHunter - Modern EdTech eCommerce Platform with Supabase
 
 A beautiful, responsive EdTech eCommerce platform built with React, TypeScript, and Tailwind CSS, powered by Supabase for the backend.
 
 ## 🚀 Features
 
 - **Personalized Dashboard**: A unique homepage experience for logged-in users.
-- **Full-Text Search**: Upgraded with Supabase's full-text search for fast, relevant results.
-- **Course Previews**: Video previews on course detail pages.
-- **Reviews & Ratings**: Users can view and add reviews for courses.
-- **Wishlist Functionality**: Users can save courses to a personal wishlist.
+- **Full-Text Search**: Powerful course search functionality.
+- **Advanced Course Pages**: Featuring video previews and tabbed layouts for syllabus, reviews, etc.
+- **Wishlist & Reviews**: Users can save courses for later and leave reviews.
 - **Admin Dashboard**: Full CRUD functionality for admins to manage courses.
-- **Secure User Authentication**: Powered by Supabase Auth.
-- **Real Orders**: Checkout flow creates real orders in the Supabase database.
+- **Supabase Backend**: Handles database, authentication, and storage.
 
 ## 🛠 Tech Stack
 
-- **Frontend**: React 19 + TypeScript
+- **Frontend**: React 18 + TypeScript
 - **Backend**: Supabase (PostgreSQL Database, Auth)
 - **Styling**: Tailwind CSS
-- **Routing**: React Router DOM
+- **Routing**: React Router DOM v6
 - **Animation**: Framer Motion
 - **Icons**: Lucide React
 - **Build Tool**: Vite
@@ -40,7 +38,7 @@ This project requires a Supabase backend. Follow these steps to get it running.
 
 ### 3. Set Up Database Schema
 
-This is the most important step. Run the script below in your Supabase SQL Editor to create all necessary tables, functions, and enable full-text search.
+This is the most important step. Run the script below in your Supabase SQL Editor to create all necessary tables and functions.
 
 ---
 
@@ -49,14 +47,14 @@ This is the most important step. Run the script below in your Supabase SQL Edito
 Use this script if your database is empty or you want to start completely fresh. **Warning: This will delete all existing data.**
 
 ```sql
--- === FULL RESET SCRIPT ===
+-- === FULL RESET SCRIPT (ADVANCED FEATURES) ===
 
 -- Drop trigger first to remove dependency
 DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 
 -- Drop existing tables and functions if they exist to ensure a clean slate
-DROP TABLE IF EXISTS public.wishlist;
 DROP TABLE IF EXISTS public.reviews;
+DROP TABLE IF EXISTS public.wishlist;
 DROP TABLE IF EXISTS public.orders;
 DROP TABLE IF EXISTS public.courses;
 DROP TABLE IF EXISTS public.profiles;
@@ -87,13 +85,13 @@ CREATE TABLE public.courses (
   rating numeric(2, 1) DEFAULT 4.5,
   students integer DEFAULT 0,
   features text[],
-  preview_video_url text,
-  -- For full-text search
-  fts tsvector GENERATED ALWAYS AS (to_tsvector('english', title || ' ' || description || ' ' || category)) STORED
+  video_preview_url text,
+  title_description_fts tsvector GENERATED ALWAYS AS (to_tsvector('english', title || ' ' || description)) STORED
 );
 COMMENT ON TABLE public.courses IS 'Stores all course information.';
--- Create an index for full-text search
-CREATE INDEX courses_fts ON public.courses USING gin (fts);
+
+-- Create index for full-text search
+CREATE INDEX courses_fts_idx ON public.courses USING GIN (title_description_fts);
 
 -- 3. ORDERS TABLE
 CREATE TABLE public.orders (
@@ -110,23 +108,22 @@ COMMENT ON TABLE public.orders IS 'Stores user order information.';
 CREATE TABLE public.reviews (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
   created_at timestamptz NOT NULL DEFAULT now(),
-  course_id uuid NOT NULL REFERENCES public.courses(id) ON DELETE CASCADE,
-  user_id uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  course_id uuid REFERENCES public.courses(id) ON DELETE CASCADE,
+  user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE,
   rating integer NOT NULL CHECK (rating >= 1 AND rating <= 5),
-  comment text,
-  UNIQUE(course_id, user_id) -- A user can only review a course once
+  comment text
 );
-COMMENT ON TABLE public.reviews IS 'Stores user reviews and ratings for courses.';
+COMMENT ON TABLE public.reviews IS 'Stores user reviews for courses.';
 
 -- 5. WISHLIST TABLE
 CREATE TABLE public.wishlist (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id uuid NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
-  course_id uuid NOT NULL REFERENCES public.courses(id) ON DELETE CASCADE,
   created_at timestamptz NOT NULL DEFAULT now(),
+  user_id uuid REFERENCES auth.users(id) ON DELETE CASCADE,
+  course_id uuid REFERENCES public.courses(id) ON DELETE CASCADE,
   UNIQUE(user_id, course_id)
 );
-COMMENT ON TABLE public.wishlist IS 'Stores user wishlist items.';
+COMMENT ON TABLE public.wishlist IS 'Stores user wishlisted courses.';
 
 -- 6. FUNCTION TO CREATE A USER PROFILE ON SIGNUP
 CREATE OR REPLACE FUNCTION public.handle_new_user()
@@ -183,9 +180,8 @@ CREATE POLICY "Allow users to manage their own reviews" ON public.reviews FOR AL
 -- Wishlist
 CREATE POLICY "Allow users to manage their own wishlist" ON public.wishlist FOR ALL USING (auth.uid() = user_id);
 
-
 -- 11. SEED DATA (Insert sample courses)
-INSERT INTO public.courses (title, description, price, thumbnail, instructor, duration, lessons, level, category, rating, students, features, preview_video_url) VALUES
+INSERT INTO public.courses (title, description, price, thumbnail, instructor, duration, lessons, level, category, rating, students, features, video_preview_url) VALUES
 ('Python for Beginners', 'Learn Python fundamentals and build basic projects.', 1499, 'https://images.pexels.com/photos/1181373/pexels-photo-1181373.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2', 'Asif Mahmud', '10 hours', 30, 'Beginner', 'Programming & Development', 4.5, 5234, '{"Lifetime access", "Certificate of completion"}', 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'),
 ('Full-Stack Web Development', 'Master frontend and backend development with MERN stack.', 4999, 'https://images.pexels.com/photos/326503/pexels-photo-326503.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2', 'Nadia Islam', '50 hours', 100, 'Intermediate', 'Web Development', 4.8, 12876, '{"Lifetime access", "Certificate of completion", "30-day money-back guarantee"}', 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'),
 ('React.js Complete Guide', 'Build dynamic and modern web applications with React from scratch.', 3499, 'https://images.pexels.com/photos/11035471/pexels-photo-11035471.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2', 'Fatima Akhter', '30 hours', 80, 'Intermediate', 'Web Development', 4.9, 18345, '{"Lifetime access", "Certificate of completion"}', 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'),
@@ -203,7 +199,7 @@ The demo credentials shown on the login page **will not work until you create th
 1.  **Register the User Account**:
     -   Go to the **Sign Up** page in the application.
     -   Register a new user with the email `user@example.com` and password `user123`.
-    -   **Confirm the email** by clicking the link sent to your inbox.
+    -   **Confirm the email** by clicking the link sent to your inbox (if you have email confirmation enabled in Supabase).
 
 2.  **Register the Admin Account**:
     -   Log out, then go back to the **Sign Up** page.

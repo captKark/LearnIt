@@ -15,7 +15,7 @@ const AdminDashboard: React.FC = () => {
   }, []);
 
   const stats = [
-    { title: 'Total Courses', value: totalCourses, icon: BookOpen, color: 'bg-blue-500' },
+    { title: 'Total Courses', value: totalCourses, icon: BookOpen, color: 'bg-purple-600' },
     { title: 'Total Users', value: '125', icon: Users, color: 'bg-green-500' },
     { title: 'Monthly Sales', value: '৳1,25,000', icon: BarChart, color: 'bg-yellow-500' },
   ];

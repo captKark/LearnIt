@@ -36,7 +36,7 @@ const Contact: React.FC = () => {
   };
 
   const contactInfo = [
-    { icon: Mail, title: 'Email Us', content: 'support@learnit.com', href: 'mailto:support@learnit.com' },
+    { icon: Mail, title: 'Email Us', content: 'support@skillhunter.com', href: 'mailto:support@skillhunter.com' },
     { icon: Phone, title: 'Call Us', content: '+1 (555) 123-4567', href: 'tel:+15551234567' },
     { icon: MapPin, title: 'Visit Us', content: '123 Learning Lane, Education City, 12345', href: '#' },
   ];
@@ -86,12 +86,12 @@ const Contact: React.FC = () => {
               <div className="space-y-8">
                 {contactInfo.map(item => (
                   <div key={item.title} className="flex items-start space-x-4">
-                    <div className="flex-shrink-0 w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                      <item.icon className="w-6 h-6 text-blue-600" />
+                    <div className="flex-shrink-0 w-12 h-12 bg-gradient-to-br from-[#396afc] to-[#2948ff] rounded-lg flex items-center justify-center">
+                      <item.icon className="w-6 h-6 text-white" />
                     </div>
                     <div>
                       <h3 className="text-lg font-semibold text-gray-900">{item.title}</h3>
-                      <a href={item.href} className="text-gray-600 hover:text-blue-600 transition-colors">{item.content}</a>
+                      <a href={item.href} className="text-gray-600 hover:text-blue-700 transition-colors">{item.content}</a>
                     </div>
                   </div>
                 ))}
@@ -121,7 +121,7 @@ const Contact: React.FC = () => {
                   <textarea name="message" id="message" rows={4} value={formData.message} onChange={handleInputChange} className="w-full px-4 py-3 border border-gray-200 rounded-lg" required></textarea>
                 </div>
                 <div>
-                  <button type="submit" disabled={isSubmitting} className="w-full flex justify-center items-center px-6 py-3 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50">
+                  <button type="submit" disabled={isSubmitting} className="w-full flex justify-center items-center px-6 py-3 bg-gradient-to-r from-[#396afc] to-[#2948ff] text-white rounded-lg font-semibold hover:shadow-lg disabled:opacity-50">
                     {isSubmitting ? <LoadingSpinner size="sm" /> : <><Send className="w-5 h-5 mr-2" /> Send Message</>}
                   </button>
                 </div>

@@ -2,20 +2,26 @@ import { supabase } from '../lib/supabaseClient';
 import { Course, Order, Review, WishlistItem } from '../types';
 
 // Course APIs
-export const getCourses = async (searchTerm?: string): Promise<Course[]> => {
-  let query = supabase.from('courses').select('*');
+export const getCourses = async (searchTerm?: string, mode: 'search' | 'suggest' = 'search'): Promise<Course[]> => {
+  let query = supabase
+    .from('courses')
+    .select('*');
 
-  if (searchTerm && searchTerm.trim()) {
-    // Convert the user's search term into a valid tsquery format.
-    // This replaces spaces with the '&' (AND) operator, so a search for
-    // "machine learning" becomes a search for "machine & learning".
-    const formattedSearchTerm = searchTerm.trim().split(/\s+/).join(' & ');
-    query = query.textSearch('fts', formattedSearchTerm);
+  if (searchTerm) {
+    if (mode === 'suggest') {
+      query = query.ilike('title', `%${searchTerm}%`).limit(5);
+    } else {
+      const formattedQuery = searchTerm.trim().replace(/\s+/g, ' & ');
+      query = query.textSearch('title_description_fts', formattedQuery);
+    }
   }
-
-  query = query.order('students', { ascending: false });
-
+  
+  if (mode !== 'suggest') {
+    query = query.order('students', { ascending: false });
+  }
+    
   const { data, error } = await query;
+    
   if (error) throw new Error(error.message);
   return data || [];
 };
@@ -98,50 +104,63 @@ export const getOrders = async (): Promise<any[]> => {
 };
 
 // Review APIs
-export const getReviewsByCourseId = async (courseId: string): Promise<Review[]> => {
+export const getReviewsByCourse = async (courseId: string): Promise<Review[]> => {
   const { data, error } = await supabase
     .from('reviews')
     .select('*, profiles(full_name)')
     .eq('course_id', courseId)
     .order('created_at', { ascending: false });
-
   if (error) throw new Error(error.message);
-  return data || [];
+  return data as Review[];
 };
 
-export const addReview = async (reviewData: { course_id: string; user_id: string; rating: number; comment: string }): Promise<Review> => {
-  const { data, error } = await supabase.from('reviews').insert(reviewData).select().single();
+export const createReview = async (reviewData: { course_id: string; rating: number; comment: string; }): Promise<Review> => {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('User not authenticated');
+
+  const { data, error } = await supabase
+    .from('reviews')
+    .insert({ ...reviewData, user_id: user.id })
+    .select('*, profiles(full_name)')
+    .single();
   if (error) throw new Error(error.message);
-  return data;
+  return data as Review;
 };
 
 // Wishlist APIs
 export const getWishlist = async (): Promise<WishlistItem[]> => {
   const { data: { user } } = await supabase.auth.getUser();
-  if (!user) return [];
+  if (!user) throw new Error('User not authenticated');
 
   const { data, error } = await supabase
     .from('wishlist')
     .select('*, courses(*)')
     .eq('user_id', user.id);
-
   if (error) throw new Error(error.message);
-  return data || [];
+  return data as WishlistItem[];
 };
 
-export const addToWishlist = async (courseId: string): Promise<any> => {
+export const addToWishlist = async (courseId: string): Promise<WishlistItem> => {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('User not authenticated');
 
-  const { data, error } = await supabase.from('wishlist').insert({ user_id: user.id, course_id: courseId });
+  const { data, error } = await supabase
+    .from('wishlist')
+    .insert({ user_id: user.id, course_id: courseId })
+    .select('*, courses(*)')
+    .single();
   if (error) throw new Error(error.message);
-  return data;
+  return data as WishlistItem;
 };
 
-export const removeFromWishlist = async (courseId: string): Promise<any> => {
+export const removeFromWishlist = async (courseId: string): Promise<void> => {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('User not authenticated');
 
-  const { error } = await supabase.from('wishlist').delete().match({ user_id: user.id, course_id: courseId });
+  const { error } = await supabase
+    .from('wishlist')
+    .delete()
+    .eq('user_id', user.id)
+    .eq('course_id', courseId);
   if (error) throw new Error(error.message);
 };

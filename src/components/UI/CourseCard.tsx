@@ -32,14 +32,14 @@ const CourseCard: React.FC<CourseCardProps> = ({ course, index = 0 }) => {
       
       <div className="p-6">
         <div className="flex items-center justify-between mb-2">
-          <span className="text-sm text-blue-600 font-medium">{course.category}</span>
+          <span className="text-sm text-blue-700 font-medium">{course.category}</span>
           <div className="flex items-center space-x-1">
             <Star className="w-4 h-4 text-yellow-400 fill-current" />
             <span className="text-sm text-gray-600">{course.rating}</span>
           </div>
         </div>
         
-        <h3 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-2 group-hover:text-blue-600 transition-colors">
+        <h3 className="text-lg font-semibold text-gray-900 mb-2 line-clamp-2 group-hover:text-blue-700 transition-colors">
           <Link to={`/course/${course.id}`}>{course.title}</Link>
         </h3>
         
@@ -68,7 +68,7 @@ const CourseCard: React.FC<CourseCardProps> = ({ course, index = 0 }) => {
           </span>
           <Link
             to={`/course/${course.id}`}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium"
+            className="px-4 py-2 bg-gradient-to-r from-[#396afc] to-[#2948ff] text-white rounded-lg hover:shadow-lg transform hover:-translate-y-px transition-all text-sm font-medium"
           >
             View Course
           </Link>

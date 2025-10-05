@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { BookOpen, Facebook, Twitter, Instagram, Linkedin } from 'lucide-react';
+import { Facebook, Twitter, Instagram, Linkedin } from 'lucide-react';
 
 const Footer: React.FC = () => {
   return (
@@ -10,14 +10,11 @@ const Footer: React.FC = () => {
           {/* Logo and description */}
           <div className="col-span-1 md:col-span-2">
             <Link to="/" className="flex items-center space-x-2 mb-4">
-              <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
-                <BookOpen className="w-5 h-5 text-white" />
-              </div>
-              <span className="text-xl font-bold">LearnIt</span>
+              <span style={{fontFamily: "'Poppins', sans-serif"}} className="text-2xl font-bold text-white">SkillHunter</span>
             </Link>
             <p className="text-gray-400 mb-6 max-w-md">
               Empowering learners worldwide with high-quality online courses. 
-              Learn from industry experts and advance your career with our comprehensive curriculum.
+              Hunt the skills you need to own your future.
             </p>
             <div className="flex space-x-4">
               <a href="#" className="text-gray-400 hover:text-white transition-colors">
@@ -92,7 +89,7 @@ const Footer: React.FC = () => {
 
         <div className="border-t border-gray-800 mt-8 pt-8 text-center">
           <p className="text-gray-400">
-            © {new Date().getFullYear()} LearnIt. All rights reserved.
+            © {new Date().getFullYear()} SkillHunter. All rights reserved.
           </p>
         </div>
       </div>

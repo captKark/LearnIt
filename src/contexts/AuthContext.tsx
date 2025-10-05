@@ -21,29 +21,45 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // onAuthStateChange fires immediately with the initial session state,
-    // and then again whenever the auth state changes. This is our single source of truth.
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+    // This function runs once on startup to check for an existing session.
+    const checkInitialSession = async () => {
       try {
+        // Attempt to get the current session. This might throw the refresh token error.
+        const { data: { session } } = await supabase.auth.getSession();
+
         if (session) {
-          const { data: profile, error } = await supabase
+          const { data: profile } = await supabase
             .from('profiles')
             .select('*')
             .eq('id', session.user.id)
             .single();
-          
-          if (error) throw error;
-          setUser(profile);
+          setUser(profile || null);
         } else {
           setUser(null);
         }
       } catch (error) {
-        console.error('Error handling auth state change:', (error as Error).message);
+        // This will catch the "Invalid Refresh Token" error and other initialization errors.
+        console.error("Error checking initial session:", error);
         setUser(null);
       } finally {
-        // This is crucial: once the initial check is done (session or no session),
-        // we must set loading to false.
+        // This block is GUARANTEED to run, permanently fixing the stuck loading state.
         setIsLoading(false);
+      }
+    };
+
+    checkInitialSession();
+
+    // This listener handles subsequent authentication changes (e.g., user logs in or out).
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      if (session) {
+        const { data: profile } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', session.user.id)
+          .single();
+        setUser(profile || null);
+      } else {
+        setUser(null);
       }
     });
 
@@ -99,7 +115,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const logout = async () => {
     await supabase.auth.signOut();
     setUser(null);
-    localStorage.removeItem('learnIt_cart');
+    localStorage.removeItem('skillHunter_cart');
   };
 
   const value: AuthContextType = {

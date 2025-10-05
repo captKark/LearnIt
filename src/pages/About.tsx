@@ -26,7 +26,7 @@ const About: React.FC = () => {
   return (
     <div className="bg-white overflow-x-hidden">
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-blue-50 via-white to-purple-50 py-24">
+      <section className="bg-gradient-to-br from-blue-50 via-white to-indigo-50 py-24">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <motion.h1 
             initial={{ opacity: 0, y: 20 }}
@@ -66,8 +66,8 @@ const About: React.FC = () => {
                 transition={{ delay: index * 0.1 }}
                 className="text-center"
               >
-                <div className="inline-flex items-center justify-center w-16 h-16 bg-blue-100 rounded-full mb-4">
-                  <stat.icon className="w-8 h-8 text-blue-600" />
+                <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-[#396afc] to-[#2948ff] rounded-full mb-4">
+                  <stat.icon className="w-8 h-8 text-white" />
                 </div>
                 <div className="text-3xl font-bold text-gray-900 mb-2">{stat.value}</div>
                 <div className="text-gray-600">{stat.label}</div>
@@ -88,17 +88,17 @@ const About: React.FC = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div>
-              <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900 mb-6">The LearnIt Story</h2>
+              <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900 mb-6">The SkillHunter Story</h2>
               <p className="text-gray-600 leading-relaxed mb-4">
-                Founded in 2023, LearnIt started with a simple idea: to bridge the skills gap in the modern workforce. Our founders, a group of passionate educators and tech enthusiasts, noticed that traditional education often struggled to keep pace with the rapidly evolving industry demands.
+                Founded in 2023, SkillHunter started with a simple idea: to bridge the skills gap in the modern workforce. Our founders, a group of passionate educators and tech enthusiasts, noticed that traditional education often struggled to keep pace with the rapidly evolving industry demands.
               </p>
               <p className="text-gray-600 leading-relaxed">
-                We set out to create a platform that not only teaches relevant, in-demand skills but also fosters a community of lifelong learners. Today, LearnIt is a thriving ecosystem where students and instructors connect, share knowledge, and grow together.
+                We set out to create a platform that not only teaches relevant, in-demand skills but also fosters a community of lifelong learners. Today, SkillHunter is a thriving ecosystem where students and instructors connect, share knowledge, and grow together.
               </p>
             </div>
             <div className="relative">
               <img src="https://images.unsplash.com/photo-1522202176988-66273c2fd55f?ixlib=rb-4.0.3&auto=format&fit=crop&w=1471&q=80" alt="Team working together" className="rounded-xl shadow-lg relative z-10" />
-              <div className="absolute -bottom-4 -left-4 w-full h-full bg-gradient-to-br from-blue-200 to-purple-200 rounded-xl"></div>
+              <div className="absolute -bottom-4 -left-4 w-full h-full bg-gradient-to-br from-blue-200 via-indigo-200 to-purple-200 rounded-xl"></div>
             </div>
           </div>
         </div>
@@ -129,10 +129,10 @@ const About: React.FC = () => {
               >
                 <img src={member.image} alt={member.name} className="w-32 h-32 rounded-full mx-auto mb-4 object-cover shadow-md" />
                 <h3 className="text-lg font-semibold text-gray-900">{member.name}</h3>
-                <p className="text-blue-600 font-medium">{member.role}</p>
+                <p className="text-blue-700 font-medium">{member.role}</p>
                 <div className="flex justify-center space-x-3 mt-3">
-                  <a href="#" className="text-gray-400 hover:text-blue-600"><Linkedin size={20} /></a>
-                  <a href="#" className="text-gray-400 hover:text-blue-600"><Twitter size={20} /></a>
+                  <a href="#" className="text-gray-400 hover:text-blue-700"><Linkedin size={20} /></a>
+                  <a href="#" className="text-gray-400 hover:text-blue-700"><Twitter size={20} /></a>
                 </div>
               </motion.div>
             ))}
@@ -153,7 +153,7 @@ const About: React.FC = () => {
           <p className="text-xl text-gray-300 mb-8">Ready to start your learning journey? Explore our courses and find your passion.</p>
           <Link
             to="/courses"
-            className="inline-block px-8 py-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-semibold"
+            className="inline-block px-8 py-4 bg-gradient-to-r from-[#396afc] to-[#2948ff] text-white rounded-lg hover:shadow-lg transition-shadow font-semibold"
           >
             Explore Courses
           </Link>

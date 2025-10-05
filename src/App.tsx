@@ -15,11 +15,11 @@ import CourseDetail from './pages/CourseDetail';
 import Cart from './pages/Cart';
 import Checkout from './pages/Checkout';
 import Orders from './pages/Orders';
+import Wishlist from './pages/Wishlist';
 import Login from './pages/Auth/Login';
 import Register from './pages/Auth/Register';
 import About from './pages/About';
 import Contact from './pages/Contact';
-import Wishlist from './pages/Wishlist';
 
 // Admin Pages
 import AdminDashboard from './pages/Admin/AdminDashboard';

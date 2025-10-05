@@ -1,119 +1,132 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Course, Review } from '../../types';
-import { BookText, UserCircle, Star } from 'lucide-react';
-import { getReviewsByCourseId } from '../../services/api';
+import { Star, Send } from 'lucide-react';
 import ReviewCard from './ReviewCard';
-import LoadingSpinner from './LoadingSpinner';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface CourseTabsProps {
   course: Course;
+  reviews: Review[];
+  onReviewSubmit: (rating: number, comment: string) => Promise<void>;
 }
 
-const tabs = [
-  { name: 'Overview', icon: BookText },
-  { name: 'Syllabus', icon: BookText },
-  { name: 'Instructor', icon: UserCircle },
-  { name: 'Reviews', icon: Star },
-];
+const CourseTabs: React.FC<CourseTabsProps> = ({ course, reviews, onReviewSubmit }) => {
+  const [activeTab, setActiveTab] = useState('overview');
+  const [newReviewRating, setNewReviewRating] = useState(0);
+  const [newReviewComment, setNewReviewComment] = useState('');
+  const { user } = useAuth();
 
-const CourseTabs: React.FC<CourseTabsProps> = ({ course }) => {
-  const [activeTab, setActiveTab] = useState('Overview');
-  const [reviews, setReviews] = useState<Review[]>([]);
-  const [isLoadingReviews, setIsLoadingReviews] = useState(false);
+  const handleStarClick = (rating: number) => setNewReviewRating(rating);
 
-  const handleTabClick = async (tabName: string) => {
-    setActiveTab(tabName);
-    if (tabName === 'Reviews' && reviews.length === 0) {
-      setIsLoadingReviews(true);
-      try {
-        const fetchedReviews = await getReviewsByCourseId(course.id);
-        setReviews(fetchedReviews);
-      } catch (error) {
-        console.error("Failed to fetch reviews", error);
-      } finally {
-        setIsLoadingReviews(false);
-      }
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newReviewRating > 0 && newReviewComment.trim() !== '') {
+      onReviewSubmit(newReviewRating, newReviewComment);
+      setNewReviewRating(0);
+      setNewReviewComment('');
+    }
+  };
+
+  const tabs = [
+    { id: 'overview', label: 'Overview' },
+    { id: 'syllabus', label: 'Syllabus' },
+    { id: 'instructor', label: 'Instructor' },
+    { id: 'reviews', label: `Reviews (${reviews.length})` },
+  ];
+
+  const renderContent = () => {
+    switch (activeTab) {
+      case 'overview':
+        return (
+          <div className="space-y-4 text-gray-700 leading-relaxed">
+            <h3 className="text-2xl font-bold text-gray-900 mb-4">What you'll learn</h3>
+            <ul className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {course.features.map((feature, index) => (
+                <li key={index} className="flex items-start space-x-3">
+                  <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5"><div className="w-2 h-2 bg-green-600 rounded-full"></div></div>
+                  <span>{feature}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        );
+      case 'syllabus':
+        return <div>Syllabus content coming soon...</div>;
+      case 'instructor':
+        return <div>Instructor bio coming soon...</div>;
+      case 'reviews':
+        return (
+          <div>
+            <h3 className="text-2xl font-bold text-gray-900 mb-6">Student Reviews</h3>
+            {user && (
+              <form onSubmit={handleSubmit} className="mb-8 p-4 bg-gray-50 rounded-lg">
+                <h4 className="font-semibold mb-2">Leave a review</h4>
+                <div className="flex items-center mb-2">
+                  {[1, 2, 3, 4, 5].map(star => (
+                    <button key={star} type="button" onClick={() => handleStarClick(star)}>
+                      <Star className={`w-6 h-6 ${newReviewRating >= star ? 'text-yellow-400 fill-current' : 'text-gray-300'}`} />
+                    </button>
+                  ))}
+                </div>
+                <textarea
+                  value={newReviewComment}
+                  onChange={(e) => setNewReviewComment(e.target.value)}
+                  placeholder="Share your thoughts..."
+                  className="w-full p-2 border rounded-md mb-2"
+                  rows={3}
+                />
+                <button type="submit" className="px-4 py-2 bg-gradient-to-r from-[#396afc] to-[#2948ff] text-white rounded-md flex items-center gap-2">
+                  <Send size={16} /> Submit Review
+                </button>
+              </form>
+            )}
+            <div className="space-y-6">
+              {reviews.length > 0 ? (
+                reviews.map(review => <ReviewCard key={review.id} review={review} />)
+              ) : (
+                <p className="text-gray-500">No reviews yet. Be the first to leave one!</p>
+              )}
+            </div>
+          </div>
+        );
+      default:
+        return null;
     }
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-8">
-      <div className="border-b border-gray-200 mb-6">
-        <nav className="-mb-px flex space-x-8" aria-label="Tabs">
-          {tabs.map((tab) => (
+    <div className="bg-white rounded-xl shadow-sm border border-gray-100">
+      <div className="border-b border-gray-200">
+        <nav className="-mb-px flex space-x-6 px-6">
+          {tabs.map(tab => (
             <button
-              key={tab.name}
-              onClick={() => handleTabClick(tab.name)}
+              key={tab.id}
+              onClick={() => setActiveTab(tab.id)}
               className={`${
-                activeTab === tab.name
+                activeTab === tab.id
                   ? 'border-blue-500 text-blue-600'
                   : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-              } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm flex items-center space-x-2`}
+              } whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm transition-colors`}
             >
-              <tab.icon className="w-5 h-5" />
-              <span>{tab.name}</span>
+              {tab.label}
             </button>
           ))}
         </nav>
       </div>
-
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={activeTab}
-          initial={{ y: 10, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          exit={{ y: -10, opacity: 0 }}
-          transition={{ duration: 0.2 }}
-        >
-          {activeTab === 'Overview' && (
-            <div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-4">Why you should do this course?</h3>
-              <p className="text-gray-700 leading-relaxed">{course.description}</p>
-            </div>
-          )}
-          {activeTab === 'Syllabus' && (
-            <div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-4">What you'll learn</h3>
-              <ul className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {course.features.map((feature, index) => (
-                  <li key={index} className="flex items-start space-x-3">
-                    <div className="w-6 h-6 bg-green-100 rounded-full flex items-center justify-center flex-shrink-0 mt-0.5"><div className="w-2 h-2 bg-green-600 rounded-full"></div></div>
-                    <span className="text-gray-700">{feature}</span>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          )}
-          {activeTab === 'Instructor' && (
-            <div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-4">About the Instructor</h3>
-              <div className="flex items-start space-x-4">
-                <div className="w-20 h-20 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-bold text-3xl">{course.instructor.charAt(0)}</div>
-                <div>
-                  <h4 className="font-semibold text-xl text-gray-900 mb-1">{course.instructor}</h4>
-                  <p className="text-gray-600 font-medium">Expert Instructor</p>
-                  <p className="text-gray-600 mt-2">Professional instructor with years of industry experience and thousands of satisfied students. Dedicated to making complex topics easy to understand.</p>
-                </div>
-              </div>
-            </div>
-          )}
-          {activeTab === 'Reviews' && (
-            <div>
-              <h3 className="text-2xl font-bold text-gray-900 mb-4">Student Reviews</h3>
-              {isLoadingReviews ? (
-                <div className="flex justify-center py-8"><LoadingSpinner /></div>
-              ) : reviews.length > 0 ? (
-                <div className="space-y-6">
-                  {reviews.map(review => <ReviewCard key={review.id} review={review} />)}
-                </div>
-              ) : (
-                <p className="text-gray-600">No reviews yet for this course.</p>
-              )}
-            </div>
-          )}
-        </motion.div>
-      </AnimatePresence>
+      <div className="p-6">
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeTab}
+            initial={{ y: 10, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: -10, opacity: 0 }}
+            transition={{ duration: 0.2 }}
+          >
+            {renderContent()}
+          </motion.div>
+        </AnimatePresence>
+      </div>
     </div>
   );
 };

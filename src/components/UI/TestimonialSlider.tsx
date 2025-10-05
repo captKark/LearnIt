@@ -7,7 +7,7 @@ const testimonials = [
     name: 'Anika Tabassum',
     title: 'Software Engineer, Nagad',
     image: 'https://images.pexels.com/photos/3762800/pexels-photo-3762800.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2',
-    quote: "LearnIt's Full-Stack course was a game-changer for my career. The hands-on projects and expert instructors gave me the confidence to land my dream job.",
+    quote: "SkillHunter's Full-Stack course was a game-changer for my career. The hands-on projects and expert instructors gave me the confidence to land my dream job.",
   },
   {
     name: 'Rahim Ahmed',
@@ -59,12 +59,12 @@ const TestimonialSlider: React.FC = () => {
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
       transition={{ duration: 0.6 }}
-      className="bg-gray-50 py-28"
+      className="bg-white py-28"
     >
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-16">
           <h2 className="text-3xl md:text-4xl font-extrabold text-gray-900 mb-4">What Our Students Say</h2>
-          <p className="text-xl text-gray-600">Real stories from learners who have transformed their careers with LearnIt.</p>
+          <p className="text-xl text-gray-600">Real stories from learners who have transformed their careers with SkillHunter.</p>
         </div>
         <div className="relative h-[26rem] flex items-center justify-center overflow-hidden">
           <AnimatePresence initial={false} custom={direction}>

@@ -13,7 +13,7 @@ export interface Course {
   rating: number;
   students: number;
   features: string[];
-  preview_video_url?: string;
+  video_preview_url?: string;
 }
 
 export interface Profile {
@@ -43,13 +43,15 @@ export interface Review {
   user_id: string;
   rating: number;
   comment: string;
-  profiles: { full_name: string }; // To get the user's name
+  profiles: {
+    full_name: string;
+  };
 }
 
 export interface WishlistItem {
   id: string;
-  course_id: string;
   user_id: string;
+  course_id: string;
   courses: Course;
 }
 

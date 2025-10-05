@@ -24,7 +24,8 @@ const Courses: React.FC = () => {
     const fetchCourses = async () => {
       try {
         setIsLoading(true);
-        const coursesData = await getCourses(searchTerm);
+        const currentSearch = searchParams.get('search') || '';
+        const coursesData = await getCourses(currentSearch, 'search');
         setAllCourses(coursesData);
         setError(null);
       } catch (err) {
@@ -35,7 +36,7 @@ const Courses: React.FC = () => {
       }
     };
     fetchCourses();
-  }, [searchTerm]);
+  }, [searchParams]);
 
   const categories = useMemo(() => ['All', ...Array.from(new Set(allCourses.map(course => course.category)))], [allCourses]);
   const levels = ['All', 'Beginner', 'Intermediate', 'Advanced'];

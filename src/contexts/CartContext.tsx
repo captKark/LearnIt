@@ -20,7 +20,7 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
 
   useEffect(() => {
     // Load cart from localStorage
-    const savedCart = localStorage.getItem('learnIt_cart');
+    const savedCart = localStorage.getItem('skillHunter_cart');
     if (savedCart) {
       setItems(JSON.parse(savedCart));
     }
@@ -28,7 +28,7 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
 
   useEffect(() => {
     // Save cart to localStorage whenever it changes
-    localStorage.setItem('learnIt_cart', JSON.stringify(items));
+    localStorage.setItem('skillHunter_cart', JSON.stringify(items));
   }, [items]);
 
   const addToCart = (course: Course) => {
